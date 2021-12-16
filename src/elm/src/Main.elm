@@ -1,7 +1,16 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, div)
+import Element
+import Element.Background
+import Element.Border
+import Element.Font
+import Element.Input
+import Html exposing (Html)
+import Json.Decode as Json
+import Json.Encode
+import String
+import Time
 
 
 main =
@@ -18,39 +27,91 @@ main =
 
 
 type alias Model =
-    { activeTasks : List ActiveTask
+    { currentTime : Time.Posix
+    , tasks : List Task
+    , timeZone : Time.Zone
     }
-
-
-type TimeDelta
-    = TimeDelta Hours Minutes Seconds
-
-
-type Hours
-    = Hours Int
-
-
-type Minutes
-    = Minutes Int
 
 
 type Seconds
     = Seconds Int
 
 
-type ActiveTask
-    = ActiveTask
-        { timeTaken : TimeDelta
-        }
+addSeconds : Seconds -> Seconds -> Seconds
+addSeconds (Seconds a) (Seconds b) =
+    Seconds <| a + b
 
 
-init : () -> ( Model, Cmd Msg )
+formatSeconds : Seconds -> String
+formatSeconds (Seconds seconds) =
+    let
+        hours =
+            seconds // 3600
+
+        hoursInSeconds =
+            hours * 3600
+
+        minutes =
+            (seconds - hoursInSeconds) // 60
+
+        minutesInSeconds =
+            minutes * 60
+    in
+    String.concat
+        [ String.fromInt >> String.padLeft 2 '0' <| hours
+        , ":"
+        , String.fromInt >> String.padLeft 2 '0' <| minutes
+        , ":"
+        , String.fromInt
+            >> String.padLeft 2 '0'
+          <|
+            seconds
+                - hoursInSeconds
+                - minutesInSeconds
+        ]
+
+
+type alias Task =
+    { timeTaken : Seconds
+    , name : String
+    , active : Bool
+    }
+
+
+init : Json.Value -> ( Model, Cmd Msg )
 init flags =
     let
+        currentTimeParser =
+            Json.field "currentTime" Json.int
+
+        timeOffsetParser =
+            Json.field "timeOffset" Json.int
+
         model =
-            { activeTasks =
-                [
+            { currentTime =
+                case Json.decodeValue currentTimeParser flags of
+                    Ok value ->
+                        Time.millisToPosix value
+
+                    Err err ->
+                        Time.millisToPosix 0
+            , tasks =
+                [ { name = "", timeTaken = Seconds 0, active = False }
+                , { name = "", timeTaken = Seconds 0, active = False }
+                , { name = "", timeTaken = Seconds 0, active = False }
+                , { name = "", timeTaken = Seconds 0, active = False }
+                , { name = "", timeTaken = Seconds 0, active = False }
                 ]
+            , timeZone =
+                Time.customZone
+                    (case Json.decodeValue timeOffsetParser flags of
+                        Ok value ->
+                            value
+
+                        Err err ->
+                            0
+                    )
+                    []
             }
     in
     ( model, Cmd.none )
@@ -62,7 +123,110 @@ init flags =
 
 view : Model -> Html Msg
 view model =
-    div [] []
+    Element.layout
+        []
+        (Element.column
+            [ Element.width Element.fill
+            , Element.spacing 30
+            ]
+            [ formatTime model.timeZone
+                >> Element.text
+                >> Element.el [ Element.centerX, Element.alignTop ]
+              <|
+                model.currentTime
+            , viewTable model
+            , addRowButton
+            ]
+        )
+
+
+formatTime : Time.Zone -> Time.Posix -> String
+formatTime zone time =
+    String.concat
+        [ Time.toHour zone
+            >> String.fromInt
+            >> String.padLeft 2 '0'
+          <|
+            time
+        , ":"
+        , Time.toMinute zone
+            >> String.fromInt
+            >> String.padLeft 2 '0'
+          <|
+            time
+        , ":"
+        , Time.toSecond zone
+            >> String.fromInt
+            >> String.padLeft 2 '0'
+          <|
+            time
+        ]
+
+
+viewTable : Model -> Element.Element Msg
+viewTable model =
+    Element.indexedTable
+        []
+        { data = model.tasks
+        , columns =
+            [ { header =
+                    Element.el
+                        [ Element.centerX
+                        ]
+                        (Element.text "Activity")
+              , width = Element.fill
+              , view =
+                    \index task ->
+                        Element.Input.text
+                            []
+                            { onChange = SetActivityName index
+                            , text = task.name
+                            , placeholder = Nothing
+                            , label =
+                                Element.Input.labelHidden "activity"
+                            }
+              }
+            , { header = Element.text "Time"
+              , width = Element.fill
+              , view =
+                    \index task ->
+                        formatSeconds
+                            >> Element.text
+                        <|
+                            task.timeTaken
+              }
+            , { header = Element.text ""
+              , width = Element.fill
+              , view =
+                    \index task ->
+                        Element.Input.button
+                            [ Element.Background.color
+                                (if task.active then
+                                    Element.rgb255 0 255 0
+
+                                 else
+                                    Element.rgb255 255 0 0
+                                )
+                            ]
+                            { onPress = Just <| ToggleActive index
+                            , label =
+                                Element.el
+                                    [ Element.centerX
+                                    ]
+                                    (Element.text "Toggle active")
+                            }
+              }
+            ]
+        }
+
+
+addRowButton : Element.Element Msg
+addRowButton =
+    Element.Input.button
+        []
+        { onPress = Just AddRow
+        , label = Element.text "Add row"
+        }
 
 
 
@@ -70,12 +234,105 @@ view model =
 
 
 type Msg
-    = Placeholder
+    = SetCurrentTime Time.Posix
+    | SetTimeZone Time.Zone
+    | ToggleActive Int
+    | SetActivityName Int String
+    | AddRow
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        SetCurrentTime currentTime ->
+            ( { model
+                | currentTime = currentTime
+                , tasks =
+                    updateTasks
+                        (timeDifference model.currentTime currentTime)
+                        model.tasks
+              }
+            , Cmd.none
+            )
+
+        SetTimeZone timeZone ->
+            ( { model | timeZone = timeZone }, Cmd.none )
+
+        ToggleActive toggledIndex ->
+            ( { model
+                | tasks =
+                    List.indexedMap
+                        (\index task ->
+                            { task
+                                | active =
+                                    if toggledIndex == index then
+                                        not task.active
+
+                                    else
+                                        task.active
+                            }
+                        )
+                        model.tasks
+              }
+            , Cmd.none
+            )
+
+        SetActivityName activityIndex name ->
+            ( { model
+                | tasks =
+                    List.indexedMap
+                        (\index task ->
+                            { task
+                                | name =
+                                    if index == activityIndex then
+                                        name
+
+                                    else
+                                        task.name
+                            }
+                        )
+                        model.tasks
+              }
+            , Cmd.none
+            )
+
+        AddRow ->
+            ( { model
+                | tasks =
+                    model.tasks
+                        ++ [ { active = False
+                             , name = ""
+                             , timeTaken = Seconds 0
+                             }
+                           ]
+              }
+            , Cmd.none
+            )
+
+
+updateTasks : Seconds -> List Task -> List Task
+updateTasks seconds tasks =
+    List.map
+        (\task ->
+            { task
+                | timeTaken =
+                    if task.active then
+                        addSeconds seconds task.timeTaken
+
+                    else
+                        task.timeTaken
+            }
+        )
+        tasks
+
+
+timeDifference : Time.Posix -> Time.Posix -> Seconds
+timeDifference from to =
+    abs
+        >> Seconds
+    <|
+        (Time.posixToMillis to - Time.posixToMillis from)
+            // 1000
 
 
 
@@ -84,4 +341,4 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Time.every 1000 SetCurrentTime
