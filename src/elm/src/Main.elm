@@ -11,6 +11,8 @@ import Json.Decode as Json
 import Json.Encode
 import String
 import Time
+import Widget
+import Widget.Material as Material
 
 
 main =
@@ -199,21 +201,11 @@ viewTable model =
               , width = Element.fill
               , view =
                     \index task ->
-                        Element.Input.button
-                            [ Element.Background.color
-                                (if task.active then
-                                    Element.rgb255 0 255 0
-
-                                 else
-                                    Element.rgb255 255 0 0
-                                )
-                            ]
-                            { onPress = Just <| ToggleActive index
-                            , label =
-                                Element.el
-                                    [ Element.centerX
-                                    ]
-                                    (Element.text "Toggle active")
+                        Widget.switch
+                            (Material.switch Material.darkPalette)
+                            { description = "active"
+                            , onPress = Just <| ToggleActive index
+                            , active = task.active
                             }
               }
             ]
@@ -222,10 +214,10 @@ viewTable model =
 
 addRowButton : Element.Element Msg
 addRowButton =
-    Element.Input.button
-        []
+    Widget.textButton
+        (Material.containedButton Material.darkPalette)
         { onPress = Just AddRow
-        , label = Element.text "Add row"
+        , text = "add row"
         }
 
 
