@@ -77,6 +77,7 @@ type alias Task =
     { timeTaken : Seconds
     , name : String
     , active : Bool
+    , index : Int
     }
 
 
@@ -98,11 +99,11 @@ init flags =
                     Err err ->
                         Time.millisToPosix 0
             , tasks =
-                [ { name = "", timeTaken = Seconds 0, active = False }
-                , { name = "", timeTaken = Seconds 0, active = False }
-                , { name = "", timeTaken = Seconds 0, active = False }
-                , { name = "", timeTaken = Seconds 0, active = False }
-                , { name = "", timeTaken = Seconds 0, active = False }
+                [ { name = "", timeTaken = Seconds 0, active = False, index = 0 }
+                , { name = "", timeTaken = Seconds 0, active = False, index = 1 }
+                , { name = "", timeTaken = Seconds 0, active = False, index = 2 }
+                , { name = "", timeTaken = Seconds 0, active = False, index = 3 }
+                , { name = "", timeTaken = Seconds 0, active = False, index = 4 }
                 ]
             , timeZone =
                 Time.customZone
@@ -167,48 +168,50 @@ formatTime zone time =
 
 viewTable : Model -> Element.Element Msg
 viewTable model =
-    Element.indexedTable
-        []
-        { data = model.tasks
+    Widget.sortTable
+        (Material.sortTable Material.darkPalette)
+        { content =
+            model.tasks
         , columns =
-            [ { header =
+            [ Widget.elementColumn
+                { title = "Activity"
+                , value = \task ->
+                    Widget.textInput
+                        (Material.textInput Material.defaultPalette)
+                        { chips = []
+                        , text = task.name
+                        , placeholder = Nothing
+                        , label = "activity"
+                        , onChange = SetActivityName task.index
+                        }
+
+                , width = Element.fill
+                }
+            , Widget.stringColumn
+                { title = "Time"
+                , value = .timeTaken >> formatSeconds
+                , toString = identity
+                , width = Element.fill
+                }
+            , Widget.elementColumn
+                { title = ""
+                , value = \task ->
                     Element.el
-                        [ Element.centerX
-                        ]
-                        (Element.text "Activity")
-              , width = Element.fill
-              , view =
-                    \index task ->
-                        Element.Input.text
-                            []
-                            { onChange = SetActivityName index
-                            , text = task.name
-                            , placeholder = Nothing
-                            , label =
-                                Element.Input.labelHidden "activity"
-                            }
-              }
-            , { header = Element.text "Time"
-              , width = Element.fill
-              , view =
-                    \index task ->
-                        formatSeconds
-                            >> Element.text
-                        <|
-                            task.timeTaken
-              }
-            , { header = Element.text ""
-              , width = Element.fill
-              , view =
-                    \index task ->
-                        Widget.switch
+                        []
+                        (Widget.switch
                             (Material.switch Material.darkPalette)
                             { description = "active"
-                            , onPress = Just <| ToggleActive index
+                            , onPress = Just <| ToggleActive task.index
                             , active = task.active
                             }
-              }
+                        )
+                , width = Element.fill
+                }
             ]
+        , sortBy =
+            "Time"
+        , asc = True
+        , onChange = ChangedSorting
         }
 
 
@@ -230,6 +233,7 @@ type Msg
     | SetTimeZone Time.Zone
     | ToggleActive Int
     | SetActivityName Int String
+    | ChangedSorting String
     | AddRow
 
 
@@ -253,11 +257,11 @@ update msg model =
         ToggleActive toggledIndex ->
             ( { model
                 | tasks =
-                    List.indexedMap
-                        (\index task ->
+                    List.map
+                        (\task ->
                             { task
                                 | active =
-                                    if toggledIndex == index then
+                                    if toggledIndex == task.index then
                                         not task.active
 
                                     else
@@ -272,11 +276,11 @@ update msg model =
         SetActivityName activityIndex name ->
             ( { model
                 | tasks =
-                    List.indexedMap
-                        (\index task ->
+                    List.map
+                        (\task ->
                             { task
                                 | name =
-                                    if index == activityIndex then
+                                    if task.index == activityIndex then
                                         name
 
                                     else
@@ -295,11 +299,15 @@ update msg model =
                         ++ [ { active = False
                              , name = ""
                              , timeTaken = Seconds 0
+                             , index = List.length model.tasks
                              }
                            ]
               }
             , Cmd.none
             )
+
+        ChangedSorting _ ->
+            ( model, Cmd.none )
 
 
 updateTasks : Seconds -> List Task -> List Task
