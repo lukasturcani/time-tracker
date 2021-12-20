@@ -216,11 +216,15 @@ viewTable model =
 
 addRowButton : Element.Element Msg
 addRowButton =
-    Widget.textButton
+    Element.el
+    [ Element.centerX
+    ]
+    (Widget.textButton
         (Material.containedButton Material.darkPalette)
         { onPress = Just AddRow
         , text = "add row"
         }
+    )
 
 
 
