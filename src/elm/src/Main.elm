@@ -126,8 +126,12 @@ init flags =
 
 view : Model -> Html Msg
 view model =
-    Element.layout
-        []
+    Element.layoutWith
+        { options = [] }
+        [ Element.width Element.fill
+        , Element.Background.color <| Element.rgb255 0 0 0
+        , Element.Font.color <| Element.rgb 206 215 225
+        ]
         (Element.column
             [ Element.width Element.fill
             , Element.spacing 30
@@ -180,7 +184,7 @@ viewTable model =
                         [ Element.padding 5
                         ]
                         (Widget.textInput
-                            (Material.textInput Material.defaultPalette)
+                            (Material.textInput Material.darkPalette)
                             { chips = []
                             , text = task.name
                             , placeholder = Nothing
