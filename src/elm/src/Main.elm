@@ -106,7 +106,7 @@ init flags =
                 Time.customZone
                     (case Json.decodeValue timeOffsetParser flags of
                         Ok value ->
-                            value
+                            -value
 
                         Err err ->
                             0
