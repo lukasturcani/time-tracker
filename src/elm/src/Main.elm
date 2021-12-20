@@ -179,20 +179,20 @@ viewTable model =
         , columns =
             [ Widget.customColumnV2
                 { title = "Activity"
-                , value = \task ->
-                    Element.el
-                        [ Element.padding 5
-                        ]
-                        (Widget.textInput
-                            (Material.textInput Material.darkPalette)
-                            { chips = []
-                            , text = task.name
-                            , placeholder = Nothing
-                            , label = "activity"
-                            , onChange = SetActivityName task.index
-                            }
-                        )
-
+                , value =
+                    \task ->
+                        Element.el
+                            [ Element.padding 5
+                            ]
+                            (Widget.textInput
+                                (Material.textInput Material.darkPalette)
+                                { chips = []
+                                , text = task.name
+                                , placeholder = Nothing
+                                , label = "activity"
+                                , onChange = SetActivityName task.index
+                                }
+                            )
                 , width = Element.fill
                 }
             , Widget.unsortableColumnV2
@@ -202,16 +202,17 @@ viewTable model =
                 }
             , Widget.customColumnV2
                 { title = "Toggle Active"
-                , value = \task ->
-                    Element.el
-                        []
-                        (Widget.switch
-                            (Material.switch Material.darkPalette)
-                            { description = "active"
-                            , onPress = Just <| ToggleActive task.index
-                            , active = task.active
-                            }
-                        )
+                , value =
+                    \task ->
+                        Element.el
+                            []
+                            (Widget.switch
+                                (Material.switch Material.darkPalette)
+                                { description = "active"
+                                , onPress = Just <| ToggleActive task.index
+                                , active = task.active
+                                }
+                            )
                 , width = Element.fill
                 }
             ]
@@ -225,14 +226,14 @@ viewTable model =
 addRowButton : Element.Element Msg
 addRowButton =
     Element.el
-    [ Element.centerX
-    ]
-    (Widget.textButton
-        (Material.containedButton Material.darkPalette)
-        { onPress = Just AddRow
-        , text = "add row"
-        }
-    )
+        [ Element.centerX
+        ]
+        (Widget.textButton
+            (Material.containedButton Material.darkPalette)
+            { onPress = Just AddRow
+            , text = "add row"
+            }
+        )
 
 
 
