@@ -187,14 +187,13 @@ viewTable model =
 
                 , width = Element.fill
                 }
-            , Widget.stringColumnV2
+            , Widget.unsortableColumnV2
                 { title = "Time"
-                , value = .timeTaken >> formatSeconds
-                , toString = identity
+                , toString = .timeTaken >> formatSeconds
                 , width = Element.fill
                 }
             , Widget.customColumnV2
-                { title = ""
+                { title = "Toggle Active"
                 , value = \task ->
                     Element.el
                         []
