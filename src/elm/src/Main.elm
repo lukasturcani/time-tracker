@@ -168,12 +168,12 @@ formatTime zone time =
 
 viewTable : Model -> Element.Element Msg
 viewTable model =
-    Widget.sortTable
+    Widget.sortTableV2
         (Material.sortTable Material.darkPalette)
         { content =
             model.tasks
         , columns =
-            [ Widget.elementColumn
+            [ Widget.customColumnV2
                 { title = "Activity"
                 , value = \task ->
                     Widget.textInput
@@ -187,13 +187,13 @@ viewTable model =
 
                 , width = Element.fill
                 }
-            , Widget.stringColumn
+            , Widget.stringColumnV2
                 { title = "Time"
                 , value = .timeTaken >> formatSeconds
                 , toString = identity
                 , width = Element.fill
                 }
-            , Widget.elementColumn
+            , Widget.customColumnV2
                 { title = ""
                 , value = \task ->
                     Element.el
