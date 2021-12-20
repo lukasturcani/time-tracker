@@ -60,16 +60,15 @@ formatSeconds (Seconds seconds) =
             minutes * 60
     in
     String.concat
-        [ String.fromInt >> String.padLeft 2 '0' <| hours
+        [ hours |> String.fromInt |> String.padLeft 2 '0'
         , ":"
-        , String.fromInt >> String.padLeft 2 '0' <| minutes
+        , minutes |> String.fromInt |> String.padLeft 2 '0'
         , ":"
-        , String.fromInt
-            >> String.padLeft 2 '0'
-          <|
-            seconds
-                - hoursInSeconds
-                - minutesInSeconds
+        , seconds
+            - hoursInSeconds
+            - minutesInSeconds
+            |> String.fromInt
+            |> String.padLeft 2 '0'
         ]
 
 
@@ -136,11 +135,10 @@ view model =
             [ Element.width Element.fill
             , Element.spacing 30
             ]
-            [ formatTime model.timeZone
-                >> Element.text
-                >> Element.el [ Element.centerX, Element.alignTop ]
-              <|
-                model.currentTime
+            [ model.currentTime
+                |> formatTime model.timeZone
+                |> Element.text
+                |> Element.el [ Element.centerX, Element.alignTop ]
             , viewTable model
             , addRowButton
             ]
@@ -150,23 +148,20 @@ view model =
 formatTime : Time.Zone -> Time.Posix -> String
 formatTime zone time =
     String.concat
-        [ Time.toHour zone
-            >> String.fromInt
-            >> String.padLeft 2 '0'
-          <|
-            time
+        [ time
+            |> Time.toHour zone
+            |> String.fromInt
+            |> String.padLeft 2 '0'
         , ":"
-        , Time.toMinute zone
-            >> String.fromInt
-            >> String.padLeft 2 '0'
-          <|
-            time
+        , time
+            |> Time.toMinute zone
+            |> String.fromInt
+            |> String.padLeft 2 '0'
         , ":"
-        , Time.toSecond zone
-            >> String.fromInt
-            >> String.padLeft 2 '0'
-          <|
-            time
+        , time
+            |> Time.toSecond zone
+            |> String.fromInt
+            |> String.padLeft 2 '0'
         ]
 
 
@@ -340,11 +335,10 @@ updateTasks seconds tasks =
 
 timeDifference : Time.Posix -> Time.Posix -> Seconds
 timeDifference from to =
-    abs
-        >> Seconds
-    <|
-        (Time.posixToMillis to - Time.posixToMillis from)
-            // 1000
+    (Time.posixToMillis to - Time.posixToMillis from)
+        // 1000
+        |> abs
+        |> Seconds
 
 
 
