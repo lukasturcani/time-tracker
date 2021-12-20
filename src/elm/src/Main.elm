@@ -64,9 +64,7 @@ formatSeconds (Seconds seconds) =
         , ":"
         , minutes |> String.fromInt |> String.padLeft 2 '0'
         , ":"
-        , seconds
-            - hoursInSeconds
-            - minutesInSeconds
+        , (seconds - hoursInSeconds - minutesInSeconds)
             |> String.fromInt
             |> String.padLeft 2 '0'
         ]
