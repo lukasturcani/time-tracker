@@ -208,7 +208,7 @@ viewTable model =
                 }
             ]
         , sortBy =
-            "Time"
+            ""
         , asc = True
         , onChange = ChangedSorting
         }
