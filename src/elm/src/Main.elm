@@ -176,14 +176,18 @@ viewTable model =
             [ Widget.customColumnV2
                 { title = "Activity"
                 , value = \task ->
-                    Widget.textInput
-                        (Material.textInput Material.defaultPalette)
-                        { chips = []
-                        , text = task.name
-                        , placeholder = Nothing
-                        , label = "activity"
-                        , onChange = SetActivityName task.index
-                        }
+                    Element.el
+                        [ Element.padding 5
+                        ]
+                        (Widget.textInput
+                            (Material.textInput Material.defaultPalette)
+                            { chips = []
+                            , text = task.name
+                            , placeholder = Nothing
+                            , label = "activity"
+                            , onChange = SetActivityName task.index
+                            }
+                        )
 
                 , width = Element.fill
                 }
